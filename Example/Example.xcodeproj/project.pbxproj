@@ -159,7 +159,7 @@
 				TargetAttributes = {
 					04DB76531C1E7BB900776B4C = {
 						CreatedOnToolsVersion = 7.1.1;
-						DevelopmentTeam = 2Z2KAMMN28;
+						DevelopmentTeam = L5F47963M2;
 						LastSwiftMigration = 1020;
 					};
 				};
@@ -388,7 +388,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				DEVELOPMENT_TEAM = 2Z2KAMMN28;
+				DEVELOPMENT_TEAM = L5F47963M2;
 				INFOPLIST_FILE = Example/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.ChatExample;
@@ -405,7 +405,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				DEVELOPMENT_TEAM = 2Z2KAMMN28;
+				DEVELOPMENT_TEAM = L5F47963M2;
 				INFOPLIST_FILE = Example/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = io.emqtt.ChatExample;
