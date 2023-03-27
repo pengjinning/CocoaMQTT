@@ -38,8 +38,8 @@ class CocoaMQTTTimer {
     
     @discardableResult
     class func after(_ interval: TimeInterval, name: String, _ block: @escaping () -> Void) -> CocoaMQTTTimer {
-        var timer : CocoaMQTTTimer? = CocoaMQTTTimer(delay: interval, name: name, timeInterval:0)
-        timer?.eventHandler = {
+        let timer: CocoaMQTTTimer? = CocoaMQTTTimer(delay: interval, name: name, timeInterval: 0)
+        timer?.eventHandler = { [weak timer] in
             block()
             timer?.suspend()
             timer = nil

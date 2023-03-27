@@ -31,7 +31,7 @@ public class CocoaMQTT5Message: NSObject {
     ///3.1.3.2.2 Will Delay Interval
     public var willDelayInterval: UInt32? = 0
     ///3.1.3.2.4 Message Expiry Interval
-    public var willExpiryInterval: UInt32? = 0
+    public var willExpiryInterval: UInt32? = .max
     ///3.1.3.2.5 Content Type
     public var contentType: String?
     ///3.1.3.2.6 Response Topic
@@ -91,18 +91,23 @@ public class CocoaMQTT5Message: NSObject {
         
         /// 3.1.3.2.7 Correlation Data
         if let willCorrelationData = self.willCorrelationData {
-            properties += willCorrelationData
+            let buff = UInt16(willCorrelationData.count).hlBytes + willCorrelationData
+            properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.correlationData.rawValue, value: buff)
         }
-        
+
         /// 3.1.3.2.8 User Property
         if let willUserProperty = self.willUserProperty {
-            let dictValues = [String](willUserProperty.values)
-            for (value) in dictValues {
-                var res = value
+            willUserProperty.forEach { element in
+                properties.append(UInt8(CocoaMQTTPropertyName.userProperty.rawValue))
                 if isUTF8EncodedData {
-                    res = res.stringUTF8
+                    let key = element.key.stringUTF8
+                    properties += key .bytesWithLength
+                    let value = element.value.stringUTF8
+                    properties += value.bytesWithLength
+                } else {
+                    properties += element.key.bytesWithLength
+                    properties += element.value.bytesWithLength
                 }
-                properties += getMQTTPropertyData(type: CocoaMQTTPropertyName.userProperty.rawValue, value: res.bytesWithLength)
             }
         }
 

@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import CocoaAsyncSocket
+import MqttCocoaAsyncSocket
 
 /**
  * Connection State
@@ -71,12 +71,22 @@ import CocoaAsyncSocket
     /// This method will be called if enable  `allowUntrustCACertificate`
     @objc optional func mqtt5(_ mqtt5: CocoaMQTT5, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void)
 
+    @objc optional func mqtt5UrlSession(_ mqtt: CocoaMQTT5, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
+
     ///
     @objc optional func mqtt5(_ mqtt5: CocoaMQTT5, didPublishComplete id: UInt16,  pubCompData: MqttDecodePubComp?)
 
     ///
     @objc optional func mqtt5(_ mqtt5: CocoaMQTT5, didStateChangeTo state: CocoaMQTTConnState)
 }
+
+/// set mqtt version to 5.0
+public func setMqtt5Version(){
+    if let storage = CocoaMQTTStorage() {
+        storage.setMQTTVersion("5.0")
+    }
+}
+
 
 /**
  * Blueprint of the MQTT Client
@@ -124,7 +134,7 @@ protocol CocoaMQTT5Client {
 
 /// MQTT Client
 ///
-/// - Note: GCDAsyncSocket need delegate to extend NSObject
+/// - Note: MGCDAsyncSocket need delegate to extend NSObject
 public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
 
     public weak var delegate: CocoaMQTT5Delegate?
@@ -307,7 +317,7 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
             printWarning("Localstorage initial failed for key: \(clientID)")
         }
     }
-
+    
     deinit {
         aliveTimer?.suspend()
         autoReconnTimer?.suspend()
@@ -402,12 +412,10 @@ public class CocoaMQTT5: NSObject, CocoaMQTT5Client {
     ///         If you want to disconnect from inside framework, call internal_disconnect()
     ///         disconnect expectedly
     public func disconnect() {
-        is_internal_disconnected = false
         internal_disconnect()
     }
 
     public func disconnect(reasonCode : CocoaMQTTDISCONNECTReasonCode,userProperties : [String: String] ) {
-        is_internal_disconnected = false
         internal_disconnect_withProperties(reasonCode: reasonCode,userProperties: userProperties)
     }
 
@@ -558,17 +566,21 @@ extension CocoaMQTT5: CocoaMQTTDeliverProtocol {
     func deliver(_ deliver: CocoaMQTTDeliver, wantToSend frame: Frame) {
         if let publish = frame as? FramePublish {
             let msgid = publish.msgid
-            guard let message = sendingMessages[msgid] else {
-                printError("Want send \(frame), but not found in CocoaMQTT5 cache")
-                return
+            var message: CocoaMQTT5Message? = nil
+                        
+            if let sendingMessage = sendingMessages[msgid] {
+                message = sendingMessage
+                //printError("Want send \(frame), but not found in CocoaMQTT cache")
+            } else {
+                message = CocoaMQTT5Message(topic: publish.topic, payload: publish.payload())
             }
-
+            
             send(publish, tag: Int(msgid))
-
-
-            self.delegate?.mqtt5(self, didPublishMessage: message, id: msgid)
-            self.didPublishMessage(self, message, msgid)
-
+            
+            if let message = message {
+                self.delegate?.mqtt5(self, didPublishMessage: message, id: msgid)
+                self.didPublishMessage(self, message, msgid)
+            }
         } else if let pubrel = frame as? FramePubRel {
             // -- Send PUBREL
             send(pubrel, tag: Int(pubrel.msgid))
@@ -603,8 +615,14 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
         didReceiveTrust(self, trust, completionHandler)
     }
 
+    public func socketUrlSession(_ socket: CocoaMQTTSocketProtocol, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        printDebug("Call the SSL/TLS manually validating function - socketUrlSession")
+
+        delegate?.mqtt5UrlSession?(self, didReceiveTrust: trust, didReceiveChallenge: challenge, completionHandler: completionHandler)
+    }
+
     // ?
-    public func socketDidSecure(_ sock: GCDAsyncSocket) {
+    public func socketDidSecure(_ sock: MGCDAsyncSocket) {
         printDebug("Socket has successfully completed SSL/TLS negotiation")
         sendConnectFrame()
     }
@@ -636,10 +654,8 @@ extension CocoaMQTT5: CocoaMQTTSocketDelegate {
         delegate?.mqtt5DidDisconnect(self, withError: err)
         didDisconnect(self, err)
 
-        if !autoReconnect{
-            guard !is_internal_disconnected else {
-                return
-            }
+        guard !is_internal_disconnected else {
+            return
         }
 
         guard autoReconnect else {
@@ -793,7 +809,7 @@ extension CocoaMQTT5: CocoaMQTTReaderDelegate {
         let success: NSMutableDictionary = NSMutableDictionary()
         var failed = [String]()
         for (idx,subscriptionList) in topicsAndQos.enumerated() {
-            if suback.grantedQos[idx] != .FAILTURE {
+            if suback.grantedQos[idx] != .FAILURE {
                 subscriptions[subscriptionList.topic] = suback.grantedQos[idx]
                 success[subscriptionList.topic] = suback.grantedQos[idx].rawValue
             } else {

@@ -63,12 +63,12 @@ On your application targets “General” settings tab, in the "Frameworks, Libr
 
 ## Usage
 
-Create a client to connect [MQTT broker](https://www.emqx.io/products/broker):
+Create a client to connect [MQTT broker](https://www.emqx.com/en/mqtt/public-mqtt5-broker):
 
 ```swift
 ///MQTT 5.0
 let clientID = "CocoaMQTT-" + String(ProcessInfo().processIdentifier)
-let mqtt5 = CocoaMQTT5(clientID: clientID, host: "localhost", port: 1883)
+let mqtt5 = CocoaMQTT5(clientID: clientID, host: "broker.emqx.io", port: 1883)
 
 let connectProperties = MqttConnectProperties()
 connectProperties.topicAliasMaximum = 0
@@ -86,7 +86,7 @@ mqtt5.connect()
 
 ///MQTT 3.1.1
 let clientID = "CocoaMQTT-" + String(ProcessInfo().processIdentifier)
-let mqtt = CocoaMQTT(clientID: clientID, host: "localhost", port: 1883)
+let mqtt = CocoaMQTT(clientID: clientID, host: "broker.emqx.io", port: 1883)
 mqtt.username = "test"
 mqtt.password = "public"
 mqtt.willMessage = CocoaMQTTWill(topic: "/will", message: "dieout")
@@ -132,7 +132,7 @@ If you integrated by **CocoaPods**, you need to modify you `Podfile` like the fo
 use_frameworks!
 
 target 'Example' do
-    pod 'CocoaMQTT/WebSockets', '1.3.0-rc.2'
+    pod 'CocoaMQTT/WebSockets'
 end
 
 ```
@@ -142,7 +142,7 @@ If you're using CocoaMQTT in a project with only a `.podspec` and no `Podfile`, 
 ```ruby
 Pod::Spec.new do |s|
   ...
-  s.dependency "Starscream", "~> 3.1.1"
+  s.dependency "Starscream"
 end
 ```
 
@@ -203,8 +203,9 @@ Then, open the `Example.xcworkspace/` by Xcode and start it!
 
 These third-party functions are used:
 
-* [GCDAsyncSocket](https://github.com/robbiehanson/CocoaAsyncSocket)
-* [Starscream](https://github.com/daltoniam/Starscream）
+~~[GCDAsyncSocket](https://github.com/robbiehanson/CocoaAsyncSocket)~~
+* [MqttCocoaAsyncSocket](https://github.com/leeway1208/MqttCocoaAsyncSocket)
+* [Starscream](https://github.com/daltoniam/Starscream)
 
 
 ## LICENSE

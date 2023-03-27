@@ -114,7 +114,7 @@ class ViewController: UIViewController {
             let lastWillMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
             lastWillMessage.contentType = "JSON"
             lastWillMessage.willResponseTopic = "/will"
-            lastWillMessage.willExpiryInterval = 0
+            lastWillMessage.willExpiryInterval = .max
             lastWillMessage.willDelayInterval = 0
             lastWillMessage.qos = .qos1
 
@@ -247,7 +247,7 @@ class ViewController: UIViewController {
 
             let lastWillMessage = CocoaMQTT5Message(topic: "/will", string: "dieout")
             lastWillMessage.contentType = "JSON"
-            lastWillMessage.willExpiryInterval = 0
+            lastWillMessage.willExpiryInterval = .max
             lastWillMessage.willDelayInterval = 0
             lastWillMessage.qos = .qos1
 
@@ -458,24 +458,30 @@ extension ViewController: CocoaMQTT5Delegate {
     }
 }
 
-
+let myCert = "myCert"
 
 extension ViewController: CocoaMQTTDelegate {
 
-    // Optional ssl CocoaMQTTDelegate
-    func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
-        TRACE("trust: \(trust)")
-        /// Validate the server certificate
-        ///
-        /// Some custom validation...
-        ///
-        /// if validatePassed {
-        ///     completionHandler(true)
-        /// } else {
-        ///     completionHandler(false)
-        /// }
-        completionHandler(true)
+    // self signed delegate
+    func mqttUrlSession(_ mqtt: CocoaMQTT, didReceiveTrust trust: SecTrust, didReceiveChallenge challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void){
+        if (challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust) {
+
+            let certData = Data(base64Encoded: myCert as String)!
+
+            if let trust = challenge.protectionSpace.serverTrust,
+               let cert = SecCertificateCreateWithData(nil,  certData as CFData) {
+                let certs = [cert]
+                SecTrustSetAnchorCertificates(trust, certs as CFArray)
+
+                completionHandler(URLSession.AuthChallengeDisposition.useCredential, URLCredential(trust: trust))
+                return
+            }
+        }
+
+        completionHandler(URLSession.AuthChallengeDisposition.cancelAuthenticationChallenge, nil)
+
     }
+
 
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         TRACE("ack: \(ack)")
